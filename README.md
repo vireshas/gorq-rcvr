@@ -1,4 +1,4 @@
-Golang wrapper around Redis pubsub.
+####Golang wrapper around Redis pubsub.
 
         package main
 
@@ -18,5 +18,5 @@ Golang wrapper around Redis pubsub.
         }
 
 
-open redis-cli
+open *redis-cli*  
 publish 1010 hello world
