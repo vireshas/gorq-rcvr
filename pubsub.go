@@ -1,58 +1,55 @@
-package main
+package pubsub
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
-	. "github.com/kisielk/og-rek"
+	"github.com/goibibo/mantle/backends"
+	"github.com/goibibo/t-coredb"
+	"sync"
 )
 
-func main() {
-	//encoding stuff
-	p := &bytes.Buffer{}
-	e := NewEncoder(p)
-	f := []interface{}{"add.add", nil, []interface{}{2, 3}, map[string]string{"pubsub": "true"}}
-	e.Encode(f)
-	fmt.Println("encoded value", string(p.Bytes()))
+type pusher chan string
 
-	job := make(map[string]string)
-	job_id := "231"
+var jobHandler map[string]pusher
+var redisClient *mantle.RedisConn
+var pscWrapper redis.PubSubConn
+var rwMutex sync.RWMutex
+var handlerLock sync.RWMutex
 
-	//pushing encoded value in redis
-	c, err := redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
+func InitPubsubClient(vertical string) {
+	//protect two guys trying to read rqRedisPool at once
+	rwMutex.Lock()
+	defer rwMutex.Unlock()
+	if redisClient == nil {
+		redisClient, err := db.PureRedisClientFor(vertical)
+		if err != nil {
+			panic(err)
+		}
+		pscWrapper := redis.PubSubConn{redisClient}
 	}
-	defer c.Close()
+}
 
-	pubsub, err := redis.Dial("tcp", ":6379")
-	if err != nil {
-		panic(err)
+func Subscribe(jobId string, chanName pusher) {
+	handlerLock.Lock()
+	defer handlerLock.Unlock()
+	jobHandler[jobId] = chanName
+	pscWrapper.Subscribe(jobId)
+}
+
+func doPublish(jobId string, result string) {
+	channel, ok := jobHandler[jobId]
+	if !ok {
+		panic("No channel to push result")
 	}
-	defer pubsub.Close()
+	channel <- result
+}
 
-	job["data"] = string(p.Bytes())
-	queue_id := "rq:job:" + job_id
-
-	_, err = c.Do("HMSET", redis.Args{queue_id}.AddFlat(job)...)
-	if err != nil {
-		fmt.Println("HMSET", err)
-	}
-
-	psc := redis.PubSubConn{pubsub}
-	psc.Subscribe(job_id)
-	psc.Subscribe("111")
-
-	_, err = c.Do("RPUSH", "rq:queue:default", job_id)
-	if err != nil {
-		fmt.Println("RPUSH", err)
-	}
-
+func Publish() {
 	for {
-		switch v := psc.Receive().(type) {
+		switch v := pscWrapper.Receive().(type) {
 		case redis.Message:
 			fmt.Printf("%s: message: %s\n", v.Channel, v.Data)
-			break
+			doPublish(string(v.Channel), string(v.Data))
 		case redis.Subscription:
 			fmt.Printf("%s: %s %d\n", v.Channel, v.Kind, v.Count)
 		case error:
