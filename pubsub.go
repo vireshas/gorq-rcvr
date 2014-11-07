@@ -16,7 +16,7 @@ var pscWrapper redis.PubSubConn
 var rwMutex sync.RWMutex
 var handlerLock sync.RWMutex
 
-func InitPubsubClient(vertical string) {
+func InitClient(vertical string) {
 	//protect two guys trying to read rqRedisPool at once
 	rwMutex.Lock()
 	defer rwMutex.Unlock()
@@ -25,7 +25,10 @@ func InitPubsubClient(vertical string) {
 		if err != nil {
 			panic(err)
 		}
-		pscWrapper := redis.PubSubConn{redisClient}
+		pscWrapper = redis.PubSubConn{redisClient.Conn}
+	}
+	if jobHandler == nil {
+		jobHandler = make(map[string]pusher)
 	}
 }
 
