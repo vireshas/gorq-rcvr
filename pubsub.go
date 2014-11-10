@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/goibibo/mantle/backends"
@@ -10,11 +11,19 @@ import (
 
 type pusher chan string
 
+const channelName = "go_background_processing"
+
 var jobHandler map[string]pusher
+
 var redisClient *mantle.RedisConn
 var pscWrapper redis.PubSubConn
 var rwMutex sync.RWMutex
 var handlerLock sync.RWMutex
+
+type Response struct {
+	Id     string
+	Result string
+}
 
 func InitClient(vertical string) {
 	//protect two guys trying to read rqRedisPool at once
@@ -30,21 +39,37 @@ func InitClient(vertical string) {
 	if jobHandler == nil {
 		jobHandler = make(map[string]pusher)
 	}
+	pscWrapper.Subscribe(channelName)
 }
 
-func Subscribe(jobId string, chanName pusher) {
+func Subscribe(jobId string, channel pusher) {
 	handlerLock.Lock()
 	defer handlerLock.Unlock()
-	jobHandler[jobId] = chanName
-	pscWrapper.Subscribe(jobId)
+	jobHandler[jobId] = channel
 }
 
-func doPublish(jobId string, result string) {
+func doPublish(chanName string, result string) {
+	if chanName != channelName {
+		panic(fmt.Sprintf("You are not subscribed to pubsub channel %s in go-pubsub", channelName))
+		return
+	}
+
+	jobId, result := GetResult(result)
 	channel, ok := jobHandler[jobId]
 	if !ok {
-		panic("No channel to push result")
+		fmt.Printf("This job is not handled on this server, Ignore!")
 	}
+
 	channel <- result
+}
+
+func GetResult(result string) (string, string) {
+	resp := &Response{}
+	if err := json.Unmarshal([]byte(result), &resp); err != nil {
+		fmt.Println("Bad response from RQ workers, Job ID", result)
+		return result, ""
+	}
+	return resp.Id, resp.Result
 }
 
 func StartPublisher() {
