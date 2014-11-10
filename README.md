@@ -1,3 +1,5 @@
+####Golang wrapper around Redis pubsub.
+
         package main
 
         import (
@@ -14,3 +16,7 @@
                 go pubsub.Publish()
                 fmt.Println(<-out)
         }
+
+
+open *redis-cli*  
+publish 1010 hello world
