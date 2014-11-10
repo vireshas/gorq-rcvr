@@ -47,7 +47,7 @@ func doPublish(jobId string, result string) {
 	channel <- result
 }
 
-func Publish() {
+func StartPublisher() {
 	for {
 		switch v := pscWrapper.Receive().(type) {
 		case redis.Message:
