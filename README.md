@@ -19,4 +19,4 @@
 
 
 open *redis-cli*  
-publish 1010 hello world
+publish go_background_processing '{"id": "1010", "result": "helloworld"}'
