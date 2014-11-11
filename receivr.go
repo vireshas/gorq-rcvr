@@ -49,13 +49,13 @@ func Subscribe(jobId string, channel pusher) {
 func writeToChannel(chanName string, result string) {
 	if chanName != channelName {
 		panic(fmt.Sprintf("You are not subscribed to pubsub channel %s in go-pubsub", channelName))
-		return
 	}
 
 	jobId, result := parseResult(result)
 	channel, ok := jobHandler[jobId]
 	if !ok {
 		fmt.Printf("This job is not handled on this server, Ignore!")
+		return
 	}
 
 	channel <- result
