@@ -9,17 +9,15 @@ import (
 	"sync"
 )
 
-type pusher chan string
-
 const channelName = "go_background_processing"
 
 var jobHandler map[string]pusher
-
 var redisClient *mantle.RedisConn
 var pscWrapper redis.PubSubConn
 var rwMutex sync.RWMutex
 var handlerLock sync.RWMutex
 
+type pusher chan string
 type Response struct {
 	Id     string
 	Result string
