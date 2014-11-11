@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const channelName = "go_background_processing"
+const defaultChan = "go_background_processing"
 
 var jobHandler map[string]pusher
 var redisClient *mantle.RedisConn
@@ -37,7 +37,7 @@ func InitClient(vertical string) {
 	if jobHandler == nil {
 		jobHandler = make(map[string]pusher)
 	}
-	pscWrapper.Subscribe(channelName)
+	pscWrapper.Subscribe(defaultChan)
 }
 
 func Subscribe(jobId string, channel pusher) {
@@ -47,8 +47,9 @@ func Subscribe(jobId string, channel pusher) {
 }
 
 func writeToChannel(chanName string, result string) {
-	if chanName != channelName {
-		panic(fmt.Sprintf("You are not subscribed to pubsub channel %s in go-pubsub", channelName))
+	if chanName != defaultChan {
+		errMsg := fmt.Sprintf("You are not subscribed to channel %s in gorq-rcvr", defaultChan)
+		panic(errMsg)
 	}
 
 	jobId, result := parseResult(result)
