@@ -5,7 +5,7 @@
         import (
                 "fmt"
                 "github.com/goibibo/t-settings"
-                "github.com/vireshas/go-pubsub"
+                "github.com/vireshas/gorq-rcvr"
         )
 
         func main() {
