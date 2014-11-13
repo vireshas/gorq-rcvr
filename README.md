@@ -1,4 +1,4 @@
-####Golang wrapper around Redis pubsub.
+####Client which receives results from gorq workers via Redis#pubsub.
 
         package main
 
@@ -11,9 +11,9 @@
         func main() {
                 settings.Configure()
                 out := make(chan string)
-                pubsub.InitClient("r2")
-                pubsub.Subscribe("1010", out)
-                go pubsub.Publish()
+                rqrcvr.InitClient("r2")
+                rqrcvr.Subscribe("1010", out)
+                go rqrcvr.Publish()
                 fmt.Println(<-out)
         }
 
