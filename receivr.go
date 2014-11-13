@@ -1,4 +1,4 @@
-package pubsub
+package rqrcvr
 
 import (
 	"encoding/json"
