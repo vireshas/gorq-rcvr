@@ -18,6 +18,8 @@ var rwMutex sync.RWMutex
 var handlerLock sync.RWMutex
 
 type pusher chan string
+
+//Id and Result are read in json.Unmarshall => made public
 type Response struct {
 	Id     string
 	Result string
