@@ -1,4 +1,4 @@
-####Client which receives results from gorq workers via Redis#pubsub.
+#### Client which receives results from gorq workers via Redis#pubsub.
 
         package main
 
